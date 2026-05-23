@@ -21,6 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { apiGet, apiPost } from "@/lib/api"
 import { cuerpoEmitirTarjeta } from "@/lib/cuentaRef"
 
@@ -59,6 +67,8 @@ export function TarjetasView() {
   const [numero, setNumero] = useState("")
   const [encontrada, setEncontrada] = useState<TarjetaResponse | null>(null)
   const [searching, setSearching] = useState(false)
+  const [tarjetas, setTarjetas] = useState<TarjetaResponse[]>([])
+  const [loadingTarjetas, setLoadingTarjetas] = useState(false)
 
   const handleEmitir = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -98,6 +108,23 @@ export function TarjetasView() {
       })
     } finally {
       setSearching(false)
+    }
+  }
+
+  const handleListarTarjetas = async () => {
+    setLoadingTarjetas(true)
+    try {
+      const data = await apiGet<TarjetaResponse[]>("/tarjetas")
+      setTarjetas(data)
+      toast.success("Tarjetas cargadas", {
+        description: `${data.length} registros`,
+      })
+    } catch (error) {
+      toast.error("No se pudieron cargar las tarjetas", {
+        description: (error as Error).message,
+      })
+    } finally {
+      setLoadingTarjetas(false)
     }
   }
 
@@ -213,6 +240,62 @@ export function TarjetasView() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Todas las tarjetas</CardTitle>
+          <CardDescription>
+            GET <code>/tarjetas</code>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleListarTarjetas}
+            disabled={loadingTarjetas}
+          >
+            {loadingTarjetas ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Search className="size-4" />
+            )}
+            Listar todas
+          </Button>
+          {tarjetas.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aún no hay datos cargados. Presiona “Listar todas”.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Número</TableHead>
+                    <TableHead>CVV</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Cuenta</TableHead>
+                    <TableHead>Titular</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tarjetas.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="font-mono">{t.numero}</TableCell>
+                      <TableCell className="font-mono">{t.cvv}</TableCell>
+                      <TableCell>{tipoLabel(t.tipo)}</TableCell>
+                      <TableCell className="font-mono">
+                        {t.cuenta?.numeroCuenta ?? t.cuentaId}
+                      </TableCell>
+                      <TableCell>{t.cuenta?.cliente?.nombre ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react"
 import {
   ClipboardList,
+  List,
   Loader2,
   PlusCircle,
   Save,
@@ -50,6 +51,7 @@ export function ClientesView() {
         <RegistrarCard />
         <ActualizarCard />
       </div>
+      <ListadoEstudiantesCard />
       <BuscarYEstadoCard />
     </div>
   )
@@ -202,6 +204,75 @@ function ActualizarCard() {
             Guardar cambios
           </Button>
         </form>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ListadoEstudiantesCard() {
+  const [loading, setLoading] = useState(false)
+  const [clientes, setClientes] = useState<ClienteDto[]>([])
+
+  async function onListar() {
+    setLoading(true)
+    try {
+      const data = await api.get<ClienteDto[]>("/clientes")
+      setClientes(data)
+      toast.success("Estudiantes cargados", {
+        description: `${data.length} registros`,
+      })
+    } catch (err) {
+      toast.error("No se pudo cargar el listado", {
+        description: err instanceof Error ? err.message : undefined,
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <List className="size-4 text-emerald-600" />
+          Todos los estudiantes
+        </CardTitle>
+        <CardDescription>
+          GET <code>/clientes</code>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Button type="button" onClick={onListar} variant="outline" disabled={loading}>
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
+          Listar todos
+        </Button>
+
+        {clientes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aún no hay datos cargados. Presiona “Listar todos”.
+          </p>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Carné</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Registro</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clientes.map((c) => (
+                  <TableRow key={c.carne}>
+                    <TableCell className="font-mono">{c.carne}</TableCell>
+                    <TableCell>{c.nombre}</TableCell>
+                    <TableCell>{formatDate(c.fechaRegistro)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

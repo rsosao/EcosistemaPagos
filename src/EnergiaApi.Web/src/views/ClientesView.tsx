@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, Pencil, PlusCircle, Search, UserRound } from 'lucide-react'
+import { List, Loader2, Pencil, PlusCircle, Search, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,6 +38,7 @@ export function ClientesView() {
         <TabsList>
           <TabsTrigger value="registrar">Registrar</TabsTrigger>
           <TabsTrigger value="actualizar">Actualizar</TabsTrigger>
+          <TabsTrigger value="listar">Listar</TabsTrigger>
           <TabsTrigger value="consultar">Consultar</TabsTrigger>
         </TabsList>
         <TabsContent value="registrar">
@@ -45,6 +46,9 @@ export function ClientesView() {
         </TabsContent>
         <TabsContent value="actualizar">
           <ActualizarClienteCard />
+        </TabsContent>
+        <TabsContent value="listar">
+          <ListarClientesCard />
         </TabsContent>
         <TabsContent value="consultar">
           <ConsultarClienteCard />
@@ -215,6 +219,72 @@ function ActualizarClienteCard() {
             </p>
           </>
         ) : null}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ListarClientesCard() {
+  const [loading, setLoading] = useState(false)
+  const [clientes, setClientes] = useState<ClienteResponse[]>([])
+
+  const cargar = async () => {
+    setLoading(true)
+    try {
+      const resp = await apiCall<ClienteResponse[]>('GET', '/clientes')
+      setClientes(resp)
+      toast.success('Clientes cargados.', { description: `${resp.length} registros` })
+    } catch (err) {
+      const e = err as ApiError
+      toast.error(e.message, { description: e.codigo })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <List className="h-4 w-4 text-amber-600" />
+          Todos los clientes
+        </CardTitle>
+        <CardDescription>
+          GET <code>/clientes</code>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Button onClick={cargar} disabled={loading} variant="outline">
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+          Listar todos
+        </Button>
+
+        {clientes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aún no hay datos cargados. Presiona “Listar todos”.
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Contador</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Registro</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clientes.map((c) => (
+                  <TableRow key={c.idCliente}>
+                    <TableCell className="font-mono text-sm">{c.idCliente}</TableCell>
+                    <TableCell>{c.nombre}</TableCell>
+                    <TableCell>{formatDate(c.fechaRegistro)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

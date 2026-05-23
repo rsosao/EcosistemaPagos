@@ -14,6 +14,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { apiGet, apiPost } from "@/lib/api"
 
 interface ClienteResponse {
@@ -37,6 +45,8 @@ export function ClientesView() {
   const [buscarId, setBuscarId] = useState("")
   const [searching, setSearching] = useState(false)
   const [encontrado, setEncontrado] = useState<ClienteResponse | null>(null)
+  const [clientes, setClientes] = useState<ClienteResponse[]>([])
+  const [loadingTodos, setLoadingTodos] = useState(false)
 
   const handleCrear = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -78,6 +88,23 @@ export function ClientesView() {
       })
     } finally {
       setSearching(false)
+    }
+  }
+
+  const handleListarTodos = async () => {
+    setLoadingTodos(true)
+    try {
+      const data = await apiGet<ClienteResponse[]>("/clientes")
+      setClientes(data)
+      toast.success("Clientes cargados", {
+        description: `${data.length} registros`,
+      })
+    } catch (error) {
+      toast.error("No se pudieron cargar los clientes", {
+        description: (error as Error).message,
+      })
+    } finally {
+      setLoadingTodos(false)
     }
   }
 
@@ -178,6 +205,56 @@ export function ClientesView() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Todos los clientes</CardTitle>
+          <CardDescription>
+            GET <code>/clientes</code>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleListarTodos}
+            disabled={loadingTodos}
+          >
+            {loadingTodos ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Search className="size-4" />
+            )}
+            Listar todos
+          </Button>
+          {clientes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aún no hay datos cargados. Presiona “Listar todos”.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Id</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>DPI</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clientes.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell>{c.id}</TableCell>
+                      <TableCell>{c.nombre}</TableCell>
+                      <TableCell className="font-mono">{c.dpi}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

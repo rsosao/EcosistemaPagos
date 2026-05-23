@@ -44,6 +44,16 @@ public static class TarjetasEndpoints
             return Results.Created($"/tarjetas/{tarjeta.Numero}", tarjeta.ToDto());
         });
 
+        group.MapGet("/", async (BancoDbContext db) =>
+        {
+            var tarjetas = await db.Tarjetas
+                .Include(t => t.Cuenta)
+                    .ThenInclude(c => c!.Cliente)
+                .OrderByDescending(t => t.Id)
+                .ToListAsync();
+            return Results.Ok(tarjetas.Select(t => t.ToDto(incluirCuenta: true)).ToList());
+        });
+
         group.MapGet("/{numero}", async (string numero, BancoDbContext db) =>
         {
             var numeroNorm = TarjetaUtil.NormalizarNumero(numero);

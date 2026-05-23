@@ -85,6 +85,8 @@ export function CuentasView() {
   const [cuenta, setCuenta] = useState<CuentaResponse | null>(null)
   const [searching, setSearching] = useState(false)
   const [movimientos, setMovimientos] = useState<MovimientoResponse[]>([])
+  const [cuentas, setCuentas] = useState<CuentaResponse[]>([])
+  const [loadingCuentas, setLoadingCuentas] = useState(false)
 
   const [monto, setMonto] = useState("")
   const [descripcion, setDescripcion] = useState("")
@@ -170,6 +172,23 @@ export function CuentasView() {
       })
     } finally {
       setOperando(null)
+    }
+  }
+
+  const handleListarCuentas = async () => {
+    setLoadingCuentas(true)
+    try {
+      const data = await apiGet<CuentaResponse[]>("/cuentas")
+      setCuentas(data)
+      toast.success("Cuentas cargadas", {
+        description: `${data.length} registros`,
+      })
+    } catch (error) {
+      toast.error("No se pudieron cargar las cuentas", {
+        description: (error as Error).message,
+      })
+    } finally {
+      setLoadingCuentas(false)
     }
   }
 
@@ -422,6 +441,61 @@ export function CuentasView() {
           </CardContent>
         </Card>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Todas las cuentas</CardTitle>
+          <CardDescription>
+            GET <code>/cuentas</code>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleListarCuentas}
+            disabled={loadingCuentas}
+          >
+            {loadingCuentas ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Search className="size-4" />
+            )}
+            Listar todas
+          </Button>
+
+          {cuentas.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aún no hay datos cargados. Presiona “Listar todas”.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Id</TableHead>
+                    <TableHead>Número</TableHead>
+                    <TableHead>Titular</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cuentas.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell>{c.id}</TableCell>
+                      <TableCell className="font-mono">{c.numeroCuenta}</TableCell>
+                      <TableCell>{c.cliente?.nombre ?? "—"}</TableCell>
+                      <TableCell className="text-right">
+                        {formatQuetzales(c.saldo)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

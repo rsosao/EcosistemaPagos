@@ -43,6 +43,14 @@ public static class ClientesEndpoints
             return Results.Ok(cliente.ToDto());
         });
 
+        grupo.MapGet("/", async (AppDbContext db) =>
+        {
+            var clientes = await db.Clientes
+                .OrderBy(c => c.Id)
+                .ToListAsync();
+            return Results.Ok(clientes.Select(c => c.ToDto()).ToList());
+        });
+
         grupo.MapGet("/{id}", async (string id, AppDbContext db) =>
         {
             var cliente = await db.Clientes.FindAsync(id);

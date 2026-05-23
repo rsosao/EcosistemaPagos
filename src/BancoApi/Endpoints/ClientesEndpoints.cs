@@ -25,6 +25,14 @@ public static class ClientesEndpoints
             return Results.Created($"/clientes/{cliente.Id}", cliente.ToDto());
         });
 
+        group.MapGet("/", async (BancoDbContext db) =>
+        {
+            var clientes = await db.Clientes
+                .OrderBy(c => c.Id)
+                .ToListAsync();
+            return Results.Ok(clientes.Select(c => c.ToDto()).ToList());
+        });
+
         group.MapGet("/{id:int}", async (int id, BancoDbContext db) =>
         {
             var cliente = await db.Clientes

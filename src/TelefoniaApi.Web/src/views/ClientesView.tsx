@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { Loader2Icon, SearchIcon, UserPlusIcon } from "lucide-react";
+import { ListIcon, Loader2Icon, SearchIcon, UserPlusIcon } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import {
   Card,
@@ -43,6 +43,8 @@ export function ClientesView() {
 
   const [editandoNombre, setEditandoNombre] = useState("");
   const [editando, setEditando] = useState(false);
+  const [todos, setTodos] = useState<Cliente[]>([]);
+  const [cargandoTodos, setCargandoTodos] = useState(false);
 
   const crear = async (e: FormEvent) => {
     e.preventDefault();
@@ -104,6 +106,19 @@ export function ClientesView() {
       toast.error((err as ApiError).message);
     } finally {
       setEditando(false);
+    }
+  };
+
+  const listarTodos = async () => {
+    setCargandoTodos(true);
+    try {
+      const data = await apiGet<Cliente[]>("/clientes");
+      setTodos(data);
+      toast.success("Clientes cargados.", { description: `${data.length} registros` });
+    } catch (err) {
+      toast.error((err as ApiError).message);
+    } finally {
+      setCargandoTodos(false);
     }
   };
 
@@ -195,6 +210,55 @@ export function ClientesView() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ListIcon className="size-4 text-violet-600" />
+            Todos los clientes
+          </CardTitle>
+          <CardDescription>
+            GET <code>/clientes</code>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button type="button" variant="outline" onClick={listarTodos} disabled={cargandoTodos}>
+            {cargandoTodos ? (
+              <Loader2Icon className="size-3.5 animate-spin" />
+            ) : (
+              <SearchIcon className="size-3.5" />
+            )}
+            Listar todos
+          </Button>
+
+          {todos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aún no hay datos cargados. Presiona “Listar todos”.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Número telefónico</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Registro</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {todos.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-mono">{c.id}</TableCell>
+                      <TableCell>{c.nombre}</TableCell>
+                      <TableCell>{formatoFecha(c.fechaRegistro)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {estado ? (
         <Card>

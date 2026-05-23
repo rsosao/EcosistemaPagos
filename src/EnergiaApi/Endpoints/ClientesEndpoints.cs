@@ -64,6 +64,18 @@ public static class ClientesEndpoints
         })
         .WithSummary("Actualiza el nombre de un cliente.");
 
+        grupo.MapGet("/", async Task<Ok<List<ClienteResponse>>> (EnergiaDbContext db) =>
+        {
+            var clientes = await db.Clientes
+                .OrderBy(c => c.Id)
+                .ToListAsync();
+            var data = clientes
+                .Select(c => new ClienteResponse(c.Id, c.Nombre, c.FechaRegistro))
+                .ToList();
+            return TypedResults.Ok(data);
+        })
+        .WithSummary("Lista todos los clientes registrados.");
+
         grupo.MapPost("/{id}/cuota", async Task<Results<Created<CuotaDetalle>, NotFound<ErrorResponse>, BadRequest<ErrorResponse>>>
             (string id, AgregarCuotaRequest req, EnergiaDbContext db) =>
         {

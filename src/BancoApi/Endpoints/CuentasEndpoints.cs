@@ -38,6 +38,15 @@ public static class CuentasEndpoints
             return Results.Created($"/cuentas/{cuenta.Id}", cuenta.ToDto());
         });
 
+        group.MapGet("/", async (BancoDbContext db) =>
+        {
+            var cuentas = await db.Cuentas
+                .Include(c => c.Cliente)
+                .OrderBy(c => c.Id)
+                .ToListAsync();
+            return Results.Ok(cuentas.Select(c => c.ToDto(incluirCliente: true)).ToList());
+        });
+
         group.MapGet("/numero/{numeroCuenta}", async (string numeroCuenta, BancoDbContext db) =>
         {
             var cuenta = await db.Cuentas
